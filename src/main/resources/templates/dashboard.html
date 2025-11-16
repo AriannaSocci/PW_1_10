@@ -1,0 +1,1292 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="en">
+<head>
+    <meta charset="UTF-8"/>
+    <title>Dashboard</title>
+    <!-- Load local copies / loaders for libraries (local fallbacks) -->
+    <script src="/js/chart.min.js"></script>
+    <style>
+        /* Modern, friendly theme and responsive layout */
+        :root {
+            --bg: #0f1724; /* deep blue */
+            --card: #0b1220;
+            --muted: #9aa4b2;
+            --accent: #4f9cff; /* blue */
+            --accent-2: #7de3a8; /* green accent */
+            --glass: rgba(255, 255, 255, 0.04);
+            --glass-2: rgba(255, 255, 255, 0.02);
+            --danger: #ff6b6b;
+            --text: #e6eefb;
+        }
+
+        html, body {
+            height: 100%;
+        }
+
+        body {
+            font-family: Inter, system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial;
+            background: linear-gradient(180deg, #071224 0%, #061021 100%);
+            color: var(--text);
+            margin: 0;
+            padding: 24px;
+            box-sizing: border-box;
+        }
+
+        a {
+            color: var(--accent);
+            text-decoration: none
+        }
+
+        header.app-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 16px;
+            margin-bottom: 18px;
+        }
+
+        .brand {
+            display: flex;
+            gap: 12px;
+            align-items: center
+        }
+
+        .logo {
+            width: 44px;
+            height: 44px;
+            border-radius: 10px;
+            background: linear-gradient(135deg, var(--accent), #6fb1ff);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 800;
+            color: #042533
+        }
+
+        h1 {
+            font-size: 1.35rem;
+            margin: 0;
+        }
+
+        .subtitle {
+            color: var(--muted);
+            font-size: 0.95rem;
+            margin-top: 2px
+        }
+
+        /* page grid: left column controls, right column main content */
+        .page-grid {
+            display: grid;
+            grid-template-columns: 340px 1fr;
+            gap: 20px;
+            align-items: start;
+        }
+
+        @media (max-width: 940px) {
+            .page-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        /* Left panel */
+        .panel {
+            background: linear-gradient(180deg, var(--card), rgba(11, 18, 32, 0.9));
+            padding: 16px;
+            border-radius: 12px;
+            box-shadow: 0 6px 18px rgba(0, 0, 0, 0.6);
+            border: 1px solid rgba(255, 255, 255, 0.03);
+        }
+
+        .controls {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        label.small {
+            font-size: 0.85rem;
+            color: var(--muted);
+            margin-bottom: 6px
+        }
+
+        input[type="text"], select {
+            padding: 10px 12px;
+            border-radius: 8px;
+            border: 1px solid rgba(255, 255, 255, 0.04);
+            background: var(--glass);
+            color: var(--text);
+        }
+
+        button {
+            padding: 10px 12px;
+            border-radius: 8px;
+            border: none;
+            background: var(--accent);
+            color: #041226;
+            font-weight: 700
+        }
+
+        button.secondary {
+            background: transparent;
+            border: 1px solid rgba(255, 255, 255, 0.04);
+            color: var(--text)
+        }
+
+        .info-row {
+            display: flex;
+            gap: 8px;
+            align-items: center;
+            margin-top: 10px;
+            flex-wrap: wrap
+        }
+
+        .pill {
+            background: var(--glass);
+            padding: 8px 10px;
+            border-radius: 999px;
+            color: var(--text);
+            font-weight: 600;
+            display: inline-flex;
+            gap: 8px;
+            align-items: center
+        }
+
+        .status-dot {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            display: inline-block
+        }
+
+        .stats {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 10px;
+            margin-top: 12px
+        }
+
+        .stat {
+            background: linear-gradient(180deg, rgba(255, 255, 255, 0.02), rgba(255, 255, 255, 0.01));
+            padding: 12px;
+            border-radius: 10px;
+            border: 1px solid rgba(255, 255, 255, 0.02)
+        }
+
+        .stat .label {
+            font-size: 0.8rem;
+            color: var(--muted)
+        }
+
+        .stat .value {
+            font-size: 1.25rem;
+            font-weight: 800;
+            margin-top: 6px
+        }
+
+        /* Right area (chart) */
+        .main-card {
+            background: linear-gradient(180deg, rgba(255, 255, 255, 0.02), rgba(255, 255, 255, 0.01));
+            border-radius: 12px;
+            padding: 16px;
+            border: 1px solid rgba(255, 255, 255, 0.03);
+            box-shadow: 0 10px 30px rgba(2, 6, 23, 0.6);
+        }
+
+        .chart-wrapper {
+            height: 460px;
+        }
+
+        .help {
+            color: var(--muted);
+            margin-top: 12px
+        }
+
+        footer.app-footer {
+            margin-top: 18px;
+            color: var(--muted);
+            font-size: 0.9rem;
+            display: flex;
+            justify-content: space-between
+        }
+
+        /* Toast notification styles */
+        #toastContainer {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            z-index: 1200;
+            pointer-events: none;
+        }
+
+        .update-toast {
+            pointer-events: auto;
+            background: linear-gradient(90deg, rgba(79, 156, 255, 0.12), rgba(125, 227, 168, 0.06));
+            color: var(--text);
+            border: 1px solid rgba(255, 255, 255, 0.06);
+            padding: 10px 14px;
+            border-radius: 8px;
+            margin-top: 8px;
+            box-shadow: 0 6px 18px rgba(0, 0, 0, 0.6);
+            font-weight: 600;
+            font-size: 0.95rem;
+            opacity: 0;
+            transition: opacity 240ms ease, transform 240ms ease;
+            transform: translateY(-6px);
+        }
+    </style>
+</head>
+<body>
+<header class="app-header">
+    <div class="brand">
+        <div class="logo">FAO</div>
+        <div>
+            <h1>Farm Operations Dashboard</h1>
+            <div class="subtitle">Environmental metrics & live updates</div>
+        </div>
+    </div>
+    <div>
+        <nav aria-label="top-actions">
+            <a th:href="@{/}" class="small">Simulate</a>
+        </nav>
+    </div>
+</header>
+
+<!-- Toast container for notifications (added for live-update notices) -->
+<div id="toastContainer" aria-live="polite"
+     style="position:fixed; bottom:20px; right:20px; z-index:1200; pointer-events:none;"></div>
+
+<main class="page-grid">
+    <!-- Left controls / stats panel -->
+    <aside class="panel">
+        <h3 style="margin:0 0 8px 0">Controls</h3>
+        <div class="controls">
+            <div class="help-text" style="margin-top:4px; font-size:0.8rem; color:var(--muted); font-style:italic;">
+                <strong>Live mode:</strong> Shows all data with real-time WebSocket updates.<br/>
+                <strong>Range mode:</strong> Filter by custom time range (Live disabled).
+            </div>
+
+            <div>
+                <label class="small" for="regionFilter">Filter regions</label>
+                <input id="regionFilter" type="text" placeholder="Type to filter regions..."/>
+            </div>
+
+            <div>
+                <label class="small" for="regionSelect">Region</label>
+                <select id="regionSelect" aria-label="Region selector">
+                    <option value="" disabled selected>Select region</option>
+                    <option th:each="entry : ${dashboardData['environmentalData'].entrySet()}" th:value="${entry.key}"
+                            th:text="${entry.key}"></option>
+                </select>
+            </div>
+
+            <div>
+                <label class="small" for="metricSelect">Metric</label>
+                <select id="metricSelect">
+                    <option value="temperature">Temperature (°C)</option>
+                    <option value="humidity">Humidity (%)</option>
+                    <option value="precipitation">Precipitation (mm)</option>
+                    <option value="soilMoisture">Soil Moisture (%)</option>
+                    <option value="windSpeed">Wind Speed (km/h)</option>
+                </select>
+            </div>
+
+            <!-- Time range controls -->
+            <div>
+                <label class="small" for="startTime">Start (local)</label>
+                <input id="startTime" type="datetime-local"/>
+            </div>
+            <div>
+                <label class="small" for="endTime">End (local)</label>
+                <input id="endTime" type="datetime-local"/>
+            </div>
+            <div style="display:flex; gap:8px; align-items:center">
+                <label class="small" style="margin-right:6px"><input id="liveToggle" type="checkbox"/> Live</label>
+                <button id="applyRange" type="button">Apply Range</button>
+            </div>
+
+            <div style="display:flex; gap:8px; margin-top:8px">
+                <button id="autoSelectLatest" type="button">Auto-select most recent</button>
+                <button id="resetView" type="button">Reset</button>
+            </div>
+        </div>
+
+        <div class="info-row">
+            <div class="pill">Selected: <strong style="margin-left:6px" id="selectedRegion">—</strong></div>
+            <div class="pill">Metric: <strong style="margin-left:6px" id="selectedMetric">—</strong></div>
+            <div class="pill">Connection: <span id="connStatusText" class="small"><span id="connDot" class="status-dot"
+                                                                                        style="background:var(--danger)"></span> Disconnected</span>
+            </div>
+        </div>
+
+        <div class="stats">
+            <div class="stat">
+                <div class="label">Data points</div>
+                <div class="value" id="statCount">—</div>
+            </div>
+            <div class="stat">
+                <div class="label">Average</div>
+                <div class="value" id="statAvg">—</div>
+            </div>
+            <div class="stat">
+                <div class="label">Min</div>
+                <div class="value" id="statMin">—</div>
+            </div>
+            <div class="stat">
+                <div class="label">Max</div>
+                <div class="value" id="statMax">—</div>
+            </div>
+        </div>
+
+        <p class="small" style="margin-top:12px">Tip: filter regions to quickly find what you need. Use the auto-select
+            button to jump to the region with the latest data.</p>
+    </aside>
+
+    <!-- Right main content with chart -->
+    <section class="main-card">
+        <div style="display:flex; justify-content:space-between; align-items:center; gap:12px;">
+            <h3 style="margin:0">Environmental Chart</h3>
+            <div class="small" id="lastUpdated">Last data: —</div>
+        </div>
+
+        <div class="chart-wrapper" style="margin-top:12px">
+            <canvas id="main-chart" style="width:100%; height:100%;"></canvas>
+        </div>
+
+        <p class="help">Hover the line to inspect values and timestamps. Use the metric selector to change the displayed
+            series.</p>
+    </section>
+</main>
+
+<!-- Production Data Section -->
+<section class="main-card" style="margin-top:20px; margin-left:24px; margin-right:24px;">
+    <div style="display:flex; justify-content:space-between; align-items:center; gap:12px;">
+        <h3 style="margin:0">Production Data Distribution</h3>
+        <div style="display:flex; gap:12px; align-items:center;">
+            <label class="small" style="margin:0">Metric:</label>
+            <label for="productionMetricSelect"></label><select id="productionMetricSelect"
+                                                                style="padding:6px 10px; border-radius:6px; border:1px solid rgba(255,255,255,0.04); background:var(--glass); color:var(--text);">
+            <option value="harvestQuantity">Harvest Quantity (kg)</option>
+            <option value="yieldPerHectare">Yield per Hectare (kg/ha)</option>
+            <option value="efficiency">Efficiency (%)</option>
+            <option value="revenue">Revenue (€)</option>
+            <option value="productionCost">Production Cost (€)</option>
+        </select>
+        </div>
+    </div>
+
+    <div class="chart-wrapper" style="margin-top:24px; height:460px;">
+        <canvas id="production-pie-chart" style="width:100%; height:100%;"></canvas>
+    </div>
+
+    <p class="help">Distribution of the selected metric across crops in the selected region.</p>
+</section>
+
+<footer class="app-footer">
+    <div>© 2025 Farm Dashboard</div>
+</footer>
+
+<!-- Build envSeries safely using per-region/per-record thymeleaf-script blocks -->
+<script th:inline="javascript">
+    /*<![CDATA[*/
+    // rawEnvSeries stores the authoritative, unfiltered data received from server/WebSocket
+    let rawEnvSeries = {};
+    // envSeries is the filtered view used by the charts/UI
+    let envSeries = {};
+
+    // Production data structures
+    let rawProductionData = []; // Array of all production data records
+    let productionPieChart = null;
+
+    // Show a transient toast notification for incoming updates
+    function showUpdateToast(message, timeoutMs) {
+        timeoutMs = timeoutMs || 4000;
+        try {
+            let container = document.getElementById('toastContainer');
+            if (!container) {
+                container = document.createElement('div');
+                container.id = 'toastContainer';
+                container.setAttribute('aria-live', 'polite');
+                container.style.position = 'fixed';
+                container.style.bottom = '20px';
+                container.style.right = '20px';
+                container.style.zIndex = 1200;
+                container.style.pointerEvents = 'none';
+                document.body.appendChild(container);
+            }
+
+            const toast = document.createElement('div');
+            toast.className = 'update-toast';
+            toast.setAttribute('role', 'status');
+            toast.style.pointerEvents = 'auto';
+            toast.style.background = 'linear-gradient(90deg, rgba(79,156,255,0.12), rgba(125,227,168,0.06))';
+            toast.style.color = 'var(--text)';
+            toast.style.border = '1px solid rgba(255,255,255,0.06)';
+            toast.style.padding = '10px 14px';
+            toast.style.borderRadius = '8px';
+            toast.style.marginTop = '8px';
+            toast.style.boxShadow = '0 6px 18px rgba(0,0,0,0.6)';
+            toast.style.fontWeight = 600;
+            toast.style.fontSize = '0.95rem';
+            toast.style.opacity = '0';
+            toast.style.transition = 'opacity 240ms ease, transform 240ms ease';
+            toast.style.transform = 'translateY(-6px)';
+
+            toast.textContent = message || 'New data received';
+            container.appendChild(toast);
+
+            // trigger show
+            requestAnimationFrame(function () {
+                toast.style.opacity = '1';
+                toast.style.transform = 'translateY(0px)';
+            });
+
+            // hide after timeout
+            setTimeout(function () {
+                toast.style.opacity = '0';
+                toast.style.transform = 'translateY(-6px)';
+                setTimeout(function () {
+                    if (toast && toast.parentNode) toast.parentNode.removeChild(toast);
+                }, 300);
+            }, timeoutMs);
+        } catch (e) {
+            console.warn('showUpdateToast error', e);
+        }
+    }
+
+    /*]]>*/
+</script>
+
+<!-- Helper: parse server OffsetDateTime with proper UTC offset handling - MUST BE BEFORE DATA LOADING -->
+<script>
+    function parseOffsetDateTime(s) {
+        if (!s) return null;
+
+        // Try native Date parsing first (handles ISO 8601 with offset like 2025-01-15T14:30:00+01:00)
+        try {
+            const d = new Date(s);
+            if (!isNaN(d.getTime())) return d;
+        } catch (e) {
+            // If native parsing fails, fall through to manual parsing
+        }
+
+        // Fallback: Accept formats like 2025-01-01T12:34 or 2025-01-01T12:34:56
+        const parts = s.split('T');
+        if (parts.length < 2) return new Date(s);
+        const date = parts[0].split('-').map(Number);
+        const timeParts = parts[1].split(':').map(Number);
+        const year = date[0], month = date[1] - 1, day = date[2];
+        const hour = timeParts[0] || 0, minute = timeParts[1] || 0, second = timeParts[2] || 0;
+        return new Date(year, month, day, hour, minute, second);
+    }
+
+    function formatTimestamp(s) {
+        const d = parseOffsetDateTime(s);
+        if (!d || isNaN(d)) return s;
+        // Format as: YYYY-MM-DD HH:mm (in local time)
+        const year = d.getFullYear();
+        const month = String(d.getMonth() + 1).padStart(2, '0');
+        const day = String(d.getDate()).padStart(2, '0');
+        const hours = String(d.getHours()).padStart(2, '0');
+        const minutes = String(d.getMinutes()).padStart(2, '0');
+        return `${year}-${month}-${day} ${hours}:${minutes}`;
+    }
+</script>
+
+<div th:if="${dashboardData != null and dashboardData['environmentalData'] != null}">
+    <div th:each="entry : ${dashboardData['environmentalData'].entrySet()}">
+        <script th:inline="javascript">
+            /*<![CDATA[*/
+            var regionName = /*[[${#strings.escapeJavaScript(entry.key)}]]*/ 'Region';
+            rawEnvSeries[regionName] = rawEnvSeries[regionName] || [];
+            /*]]>*/
+        </script>
+
+        <script th:each="d : ${entry.value}" th:inline="javascript">
+            /*<![CDATA[*/
+            var rName = /*[[${#strings.escapeJavaScript(entry.key)}]]*/ 'Region';
+            rawEnvSeries[rName].push({
+                timestamp: /*[[${d.timestamp}]]*/ '2025-01-01T00:00',
+                temperature: /*[[${d.temperature}]]*/ 0.0,
+                humidity: /*[[${d.humidity}]]*/ 0.0,
+                precipitation: /*[[${d.precipitation}]]*/ 0.0,
+                soilMoisture: /*[[${d.soilMoisture}]]*/ 0.0,
+                windSpeed: /*[[${d.windSpeed}]]*/ 0.0
+            });
+            /*]]>*/
+        </script>
+    </div>
+
+    <!-- Sort all rawEnvSeries regions by timestamp ascending after initial load -->
+    <script>
+        (function sortInitialData() {
+            console.log('Sorting initial data...');
+            Object.keys(rawEnvSeries).forEach(function (region) {
+                console.log('Sorting region:', region, 'with', rawEnvSeries[region].length, 'records');
+                rawEnvSeries[region].sort(function (a, b) {
+                    var ta = parseOffsetDateTime(a.timestamp)?.getTime() || 0;
+                    var tb = parseOffsetDateTime(b.timestamp)?.getTime() || 0;
+                    return ta - tb; // ascending order (oldest to newest)
+                });
+                // Log first and last timestamp to verify sort
+                if (rawEnvSeries[region].length > 0) {
+                    console.log('Region', region, 'first:', rawEnvSeries[region][0].timestamp, 'last:', rawEnvSeries[region][rawEnvSeries[region].length - 1].timestamp);
+                }
+            });
+            console.log('Initial rawEnvSeries sorted in ascending chronological order');
+        })();
+    </script>
+</div>
+
+<!-- Load Production Data -->
+<div th:if="${dashboardData != null and dashboardData['productionData'] != null}">
+    <!-- Production data is structured as: region -> crop -> List<ProductionData> -->
+    <div th:each="regionEntry : ${dashboardData['productionData'].entrySet()}">
+        <div th:each="cropEntry : ${regionEntry.value.entrySet()}">
+            <script th:each="d : ${cropEntry.value}" th:inline="javascript">
+                /*<![CDATA[*/
+                rawProductionData.push({
+                    timestamp: /*[[${d.timestamp}]]*/ '2025-01-01T00:00',
+                    region: /*[[${d.region}]]*/ 'Region',
+                    crop: /*[[${d.crop}]]*/ 'WHEAT',
+                    harvestQuantity: /*[[${d.harvestQuantity}]]*/ 0.0,
+                    growthDays: /*[[${d.growthDays}]]*/ 0,
+                    yieldPerHectare: /*[[${d.yieldPerHectare}]]*/ 0.0,
+                    productionCost: /*[[${d.productionCost}]]*/ 0.0,
+                    marketPrice: /*[[${d.marketPrice}]]*/ 0.0,
+                    revenue: /*[[${d.revenue}]]*/ 0.0,
+                    efficiency: /*[[${d.efficiency}]]*/ 0.0
+                });
+                /*]]>*/
+            </script>
+        </div>
+    </div>
+
+    <script>
+        (function sortProductionData() {
+            console.log('Sorting production data...');
+            rawProductionData.sort(function (a, b) {
+                var ta = parseOffsetDateTime(a.timestamp)?.getTime() || 0;
+                var tb = parseOffsetDateTime(b.timestamp)?.getTime() || 0;
+                return ta - tb; // ascending order (oldest to newest)
+            });
+            console.log('Production data loaded:', rawProductionData.length, 'records');
+            if (rawProductionData.length > 0) {
+                console.log('First production record:', rawProductionData[0].timestamp);
+                console.log('Last production record:', rawProductionData[rawProductionData.length - 1].timestamp);
+            }
+        })();
+    </script>
+</div>
+
+
+<!-- WebSocket client & live update handling (incremental/append behavior) -->
+<script src="/js/sockjs.min.js"></script>
+<script src="/js/stomp.min.js"></script>
+<script>
+    function setConnStatus(status) {
+        const statusSpan = document.getElementById('connStatusText');
+        const dot = document.getElementById('connDot');
+        if (!statusSpan) return;
+
+        // Ensure dot exists; if not, create it
+        if (!dot) {
+            const newDot = document.createElement('span');
+            newDot.id = 'connDot';
+            newDot.className = 'status-dot';
+            statusSpan.insertBefore(newDot, statusSpan.firstChild);
+        }
+
+        const colorMap = {
+            connected: '#2ecc71',    // green
+            reconnecting: '#f39c12', // orange
+            disconnected: '#ff6b6b'  // red
+        };
+
+        const dotEl = document.getElementById('connDot');
+        if (dotEl) dotEl.style.background = colorMap[status] || colorMap.disconnected;
+
+        // Update the text node after the dot without replacing the dot element
+        // The statusSpan contains the dot as first child and a text node after it (or none)
+        let textNode = dotEl && dotEl.nextSibling;
+        if (!textNode) {
+            textNode = document.createTextNode(' ');
+            statusSpan.appendChild(textNode);
+        }
+        if (status === 'connected') textNode.nodeValue = ' Connected';
+        else if (status === 'reconnecting') textNode.nodeValue = ' Reconnecting';
+        else textNode.nodeValue = ' Disconnected';
+    }
+
+    // Apply incremental updates from a dashboard payload (APPEND new records)
+    function applyDashboardDataIncremental(payload) {
+        try {
+            console.log('WebSocket data received:', payload);
+            const data = typeof payload === 'string' ? JSON.parse(payload) : payload;
+            if (!data) return;
+
+            // If server provided a lastUpdate label, show it
+            if (data.lastUpdate) {
+                const lastEl = document.getElementById('lastUpdated');
+                if (lastEl) lastEl.textContent = 'Last data: ' + data.lastUpdate;
+            }
+
+            if (!data.environmentalData) {
+                // no environmental data in this update
+                console.warn('No environmental data in WebSocket update');
+                showUpdateToast('No environmental data in update');
+                return;
+            }
+
+            console.log('Processing environmental data for regions:', Object.keys(data.environmentalData));
+
+            // APPEND MODE: merge incoming records with existing rawEnvSeries
+            Object.keys(data.environmentalData).forEach(function (region) {
+                const incoming = (data.environmentalData[region] || []).slice();
+                console.log('Region', region, '- incoming records:', incoming.length);
+
+                // Initialize region if it doesn't exist
+                if (!rawEnvSeries[region]) {
+                    rawEnvSeries[region] = [];
+                }
+
+                const beforeCount = rawEnvSeries[region].length;
+
+                // Append new records
+                incoming.forEach(function (d) {
+                    rawEnvSeries[region].push({
+                        timestamp: d.timestamp,
+                        temperature: d.temperature != null ? Number(d.temperature) : null,
+                        humidity: d.humidity != null ? Number(d.humidity) : null,
+                        precipitation: d.precipitation != null ? Number(d.precipitation) : null,
+                        soilMoisture: d.soilMoisture != null ? Number(d.soilMoisture) : null,
+                        windSpeed: d.windSpeed != null ? Number(d.windSpeed) : null
+                    });
+                });
+
+                console.log('Region', region, '- data points:', beforeCount, '->', rawEnvSeries[region].length);
+
+                // Sort by timestamp ascending to keep data ordered
+                rawEnvSeries[region].sort(function (a, b) {
+                    var ta = parseOffsetDateTime(a.timestamp)?.getTime() || 0;
+                    var tb = parseOffsetDateTime(b.timestamp)?.getTime() || 0;
+                    return ta - tb;
+                });
+            });
+
+            // Handle production data updates if present
+            if (data.productionData && Array.isArray(data.productionData) && data.productionData.length > 0) {
+                console.log('Processing production data:', data.productionData.length, 'records');
+                const beforeCount = rawProductionData.length;
+
+                data.productionData.forEach(function (d) {
+                    rawProductionData.push({
+                        timestamp: d.timestamp,
+                        region: d.region,
+                        crop: d.crop,
+                        harvestQuantity: d.harvestQuantity != null ? Number(d.harvestQuantity) : 0,
+                        growthDays: d.growthDays != null ? Number(d.growthDays) : 0,
+                        yieldPerHectare: d.yieldPerHectare != null ? Number(d.yieldPerHectare) : 0,
+                        productionCost: d.productionCost != null ? Number(d.productionCost) : 0,
+                        marketPrice: d.marketPrice != null ? Number(d.marketPrice) : 0,
+                        revenue: d.revenue != null ? Number(d.revenue) : 0,
+                        efficiency: d.efficiency != null ? Number(d.efficiency) : 0
+                    });
+                });
+
+                // Sort production data by timestamp
+                rawProductionData.sort(function (a, b) {
+                    var ta = parseOffsetDateTime(a.timestamp)?.getTime() || 0;
+                    var tb = parseOffsetDateTime(b.timestamp)?.getTime() || 0;
+                    return ta - tb;
+                });
+
+                console.log('Production data points:', beforeCount, '->', rawProductionData.length);
+
+                // Update production pie chart
+                try {
+                    updateProductionPieChart();
+                } catch (e) {
+                    console.error('updateProductionPieChart error', e);
+                }
+            }
+
+            console.log('Calling applyTimeFilterAndRender after WebSocket update...');
+
+            // After updating rawEnvSeries, apply the current time filter / live mode
+            try {
+                applyTimeFilterAndRender();
+            } catch (e) {
+                console.error('applyTimeFilterAndRender error', e);
+            }
+
+            // Notify the user that new data arrived
+            try {
+                var count = 0;
+                Object.keys(data.environmentalData).forEach(function (r) {
+                    count += (data.environmentalData[r] || []).length;
+                });
+                if (data.productionData && Array.isArray(data.productionData)) {
+                    count += data.productionData.length;
+                }
+                var toastMsg = count + ' new record' + (count !== 1 ? 's' : '') + ' received';
+                if (data.lastUpdate) toastMsg += ' at ' + data.lastUpdate;
+                showUpdateToast(toastMsg, 4000);
+            } catch (e) { /* non-critical */
+            }
+        } catch (err) {
+            console.error('applyDashboardDataIncremental error', err, payload);
+        }
+    }
+
+    // Connect to STOMP over SockJS and subscribe to dashboard updates
+    (function connectWS() {
+        try {
+            if (typeof SockJS === 'undefined' || typeof Stomp === 'undefined') {
+                console.warn('SockJS/STOMP not present yet');
+                setTimeout(connectWS, 1000);
+                return;
+            }
+            const socket = new SockJS('/ws');
+            const client = Stomp.over(socket);
+            client.debug = null;
+            client.connect({}, function () {
+                setConnStatus('connected');
+                console.info('STOMP connected');
+                client.subscribe('/topic/dashboard-updates', function (message) {
+                    if (!message || !message.body) return;
+                    try {
+                        var payload = JSON.parse(message.body);
+                        applyDashboardDataIncremental(payload);
+                    } catch (e) {
+                        applyDashboardDataIncremental(message.body);
+                    }
+                });
+            }, function (error) {
+                console.warn('STOMP connect error, retry in 5s', error);
+                setConnStatus('reconnecting');
+                setTimeout(connectWS, 5000);
+            });
+            // hook into socket close to show disconnected status
+            try {
+                socket.onclose = function () {
+                    setConnStatus('disconnected');
+                    setTimeout(connectWS, 2000);
+                };
+            } catch (e) {
+            }
+        } catch (e) {
+            console.warn('WebSocket setup failed', e);
+            setConnStatus('disconnected');
+            setTimeout(connectWS, 5000);
+        }
+    })();
+</script>
+
+<!-- Interactive chart + UI logic -->
+<script th:inline="javascript">
+    /*<![CDATA[*/
+    const metricConfig = {
+        temperature: {label: 'Temperature (°C)', color: 'rgba(255,99,132,1)', decimals: 1},
+        humidity: {label: 'Humidity (%)', color: 'rgba(54,162,235,1)', decimals: 1},
+        precipitation: {label: 'Precipitation (mm)', color: 'rgba(75,192,192,1)', decimals: 1},
+        soilMoisture: {label: 'Soil Moisture (%)', color: 'rgba(153,102,255,1)', decimals: 1},
+        windSpeed: {label: 'Wind Speed (km/h)', color: 'rgba(255,159,64,1)', decimals: 1}
+    };
+
+    const productionMetricConfig = {
+        harvestQuantity: {label: 'Harvest Quantity (kg)', color: 'rgba(125,227,168,1)', decimals: 1},
+        yieldPerHectare: {label: 'Yield per Hectare (kg/ha)', color: 'rgba(79,156,255,1)', decimals: 1},
+        efficiency: {label: 'Efficiency (%)', color: 'rgba(255,206,86,1)', decimals: 1},
+        revenue: {label: 'Revenue (€)', color: 'rgba(153,102,255,1)', decimals: 2},
+        productionCost: {label: 'Production Cost (€)', color: 'rgba(255,99,132,1)', decimals: 2}
+    };
+
+    let mainChart = null;
+
+    function createEmptyChart() {
+        const ctx = document.getElementById('main-chart').getContext('2d');
+        mainChart = new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: [],
+                datasets: [{label: '', data: [], borderColor: '', backgroundColor: '', tension: 0.25, pointRadius: 2}]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                interaction: {mode: 'index', intersect: false},
+                plugins: {
+                    tooltip: {
+                        callbacks: {
+                            title: function (items) {
+                                if (!items || !items.length) return '';
+                                return items[0].label;
+                            },
+                            label: function (ctx) {
+                                const v = ctx.raw;
+                                const m = ctx.dataset.label || '';
+                                return m + ': ' + Number(v).toFixed(1);
+                            }
+                        }
+                    }
+                },
+                scales: {x: {type: 'category'}, y: {beginAtZero: false}}
+            }
+        });
+    }
+
+
+    function createProductionPieChart() {
+        const ctx = document.getElementById('production-pie-chart').getContext('2d');
+        productionPieChart = new Chart(ctx, {
+            type: 'pie',
+            data: {
+                labels: [],
+                datasets: [{data: [], backgroundColor: [], borderColor: 'rgba(255,255,255,0.1)', borderWidth: 2}]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        position: 'right',
+                        labels: {
+                            color: '#ffffff',
+                            font: {size: 13},
+                            padding: 12
+                        }
+                    },
+                    tooltip: {
+                        backgroundColor: 'rgba(0,0,0,0.8)',
+                        titleColor: '#ffffff',
+                        bodyColor: '#ffffff',
+                        borderColor: 'rgba(255,255,255,0.1)',
+                        borderWidth: 1,
+                        callbacks: {
+                            label: function (c) {
+                                const v = c.raw;
+                                const total = c.chart.data.datasets[0].data.reduce((a, b) => a + b, 0);
+                                const percentage = ((v / total) * 100).toFixed(1);
+                                return c.label + ': ' + Number(v).toFixed(2) + ' (' + percentage + '%)';
+                            }
+                        }
+                    },
+                    title: {
+                        display: true,
+                        text: 'Production Breakdown',
+                        color: '#ffffff',
+                        font: {size: 16, weight: 'bold'},
+                        padding: {bottom: 20}
+                    }
+                }
+            }
+        });
+    }
+
+    function updateProductionPieChart() {
+        if (!productionPieChart) return;
+        const regionSelect = document.getElementById('regionSelect');
+        const metricSelect = document.getElementById('productionMetricSelect');
+        if (!regionSelect || !metricSelect) return;
+        const selectedRegion = regionSelect.value;
+        const selectedMetric = metricSelect.value;
+        const metricCfg = productionMetricConfig[selectedMetric] || productionMetricConfig.harvestQuantity;
+        if (!selectedRegion) {
+            productionPieChart.data.labels = [];
+            productionPieChart.data.datasets[0].data = [];
+            productionPieChart.options.plugins.title.text = 'Production Breakdown — select a region';
+            productionPieChart.update();
+            return;
+        }
+        const regionDataAll = rawProductionData.filter(d => d.region === selectedRegion);
+        if (regionDataAll.length === 0) {
+            productionPieChart.data.labels = [];
+            productionPieChart.data.datasets[0].data = [];
+            productionPieChart.options.plugins.title.text = selectedRegion + ' — No production data';
+            productionPieChart.update();
+            return;
+        }
+        const perCrop = {};
+        regionDataAll.forEach(d => {
+            const val = Number(d[selectedMetric]) || 0;
+            perCrop[d.crop] = (perCrop[d.crop] || 0) + val;
+        });
+        const cropColors = {
+            WHEAT: '#FFD700',
+            CORN: '#FF8C00',
+            RICE: '#20B2AA',
+            SOY: '#32CD32',
+            SUNFLOWER: '#FF4500',
+        };
+        const labels = Object.keys(perCrop).sort();
+        const values = labels.map(l => perCrop[l]);
+        const colors = labels.map(l => cropColors[l] || '#4f9cff');
+        productionPieChart.data.labels = labels;
+        productionPieChart.data.datasets[0].data = values;
+        productionPieChart.data.datasets[0].backgroundColor = colors;
+        productionPieChart.options.plugins.title.text = selectedRegion + ' — ' + metricCfg.label + ' distribution';
+        productionPieChart.update();
+    }
+
+
+    function computeStats(arr) {
+        if (!arr || arr.length === 0) return {count: 0, avg: null, min: null, max: null, last: null};
+        const nums = arr.map(Number).filter(n => !isNaN(n));
+        if (nums.length === 0) return {count: 0, avg: null, min: null, max: null, last: null};
+        const sum = nums.reduce((a, b) => a + b, 0);
+        return {
+            count: nums.length,
+            avg: sum / nums.length,
+            min: Math.min(...nums),
+            max: Math.max(...nums),
+            last: nums[nums.length - 1]
+        };
+    }
+
+    function updateRegionInfo(region, metric) {
+        const selRegion = document.getElementById('selectedRegion');
+        const selMetric = document.getElementById('selectedMetric');
+        const lastUpdated = document.getElementById('lastUpdated');
+        const statCount = document.getElementById('statCount');
+        const statAvg = document.getElementById('statAvg');
+        const statMin = document.getElementById('statMin');
+        const statMax = document.getElementById('statMax');
+
+        if (!envSeries[region]) {
+            selRegion.textContent = '—';
+            selMetric.textContent = '—';
+            lastUpdated.textContent = 'Last data: —';
+            statCount.textContent = '—';
+            statAvg.textContent = '—';
+            statMin.textContent = '—';
+            statMax.textContent = '—';
+            return;
+        }
+
+        selRegion.textContent = region;
+        selMetric.textContent = metricConfig[metric].label;
+
+        const labels = envSeries[region].labels.slice();
+        const metricArr = envSeries[region][metric].slice();
+
+        const stats = computeStats(metricArr);
+        statCount.textContent = stats.count;
+        statAvg.textContent = stats.avg != null ? stats.avg.toFixed(metricConfig[metric].decimals) : '—';
+        statMin.textContent = stats.min != null ? stats.min.toFixed(metricConfig[metric].decimals) : '—';
+        statMax.textContent = stats.max != null ? stats.max.toFixed(metricConfig[metric].decimals) : '—';
+
+        // Last timestamp (most recent is at the end of the array)
+        const lastLabel = labels.length > 0 ? labels[labels.length - 1] : null;
+        lastUpdated.textContent = lastLabel ? ('Last data: ' + formatTimestamp(lastLabel)) : 'Last data: —';
+    }
+
+    function updateChartFor(region, metric) {
+        console.log('updateChartFor called: region=', region, 'metric=', metric);
+        if (!envSeries[region]) {
+            console.warn('envSeries[' + region + '] does not exist');
+            return;
+        }
+        const cfg = metricConfig[metric] || metricConfig.temperature;
+        const labels = envSeries[region].labels.slice();
+        const data = envSeries[region][metric].slice();
+
+        console.log('Updating chart with', labels.length, 'data points for', metric);
+
+        // Format timestamps for display on the chart
+        const formattedLabels = labels.map(function (ts) {
+            return formatTimestamp(ts);
+        });
+
+        mainChart.data.labels = formattedLabels;
+        mainChart.data.datasets[0].data = data;
+        mainChart.data.datasets[0].label = cfg.label;
+        mainChart.data.datasets[0].borderColor = cfg.color;
+        mainChart.data.datasets[0].backgroundColor = cfg.color.replace('1)', '0.12)');
+        mainChart.options.plugins.title = {display: true, text: region + ' — ' + cfg.label};
+        mainChart.update();
+
+        console.log('Chart updated successfully');
+
+        updateRegionInfo(region, metric);
+    }
+
+    // Apply time range and filter data - GLOBAL SCOPE so WebSocket can call it
+    function applyTimeFilterAndRender() {
+        const regionSelect = document.getElementById('regionSelect');
+        const metricSelect = document.getElementById('metricSelect');
+
+        function setControlsEnabled(enabled) {
+            const regionSelect = document.getElementById('regionSelect');
+            const metricSelect = document.getElementById('metricSelect');
+            const autoBtn = document.getElementById('autoSelectLatest');
+            const regionFilter = document.getElementById('regionFilter');
+            const applyRangeBtn = document.getElementById('applyRange');
+            const liveToggle = document.getElementById('liveToggle');
+
+            if (regionSelect) regionSelect.disabled = !enabled;
+            if (metricSelect) metricSelect.disabled = !enabled;
+            if (autoBtn) autoBtn.disabled = !enabled;
+            if (regionFilter) regionFilter.disabled = !enabled;
+            if (applyRangeBtn) applyRangeBtn.disabled = !enabled;
+            if (liveToggle) liveToggle.disabled = !enabled;
+        }
+
+        // enable controls now that we have raw data (or not)
+        setControlsEnabled(Object.keys(rawEnvSeries).length > 0);
+        const startVal = document.getElementById('startTime').value;
+        const endVal = document.getElementById('endTime').value;
+        const live = document.getElementById('liveToggle').checked;
+
+        // If live toggle is checked, render live view; otherwise apply current range
+        if (live) {
+            envSeries = {};
+            Object.keys(rawEnvSeries).forEach(function (region) {
+                // clone arrays but convert objects into series arrays
+                envSeries[region] = {
+                    labels: [],
+                    temperature: [],
+                    humidity: [],
+                    precipitation: [],
+                    soilMoisture: [],
+                    windSpeed: []
+                };
+                rawEnvSeries[region].forEach(function (d) {
+                    envSeries[region].labels.push(d.timestamp);
+                    envSeries[region].temperature.push(d.temperature != null ? Number(d.temperature) : null);
+                    envSeries[region].humidity.push(d.humidity != null ? Number(d.humidity) : null);
+                    envSeries[region].precipitation.push(d.precipitation != null ? Number(d.precipitation) : null);
+                    envSeries[region].soilMoisture.push(d.soilMoisture != null ? Number(d.soilMoisture) : null);
+                    envSeries[region].windSpeed.push(d.windSpeed != null ? Number(d.windSpeed) : null);
+                });
+            });
+        } else {
+            // parse start/end into timestamps (ms)
+            const startTs = startVal ? new Date(startVal).getTime() : Number.NEGATIVE_INFINITY;
+            const endTs = endVal ? new Date(endVal).getTime() : Number.POSITIVE_INFINITY;
+
+            envSeries = {};
+            Object.keys(rawEnvSeries).forEach(function (region) {
+                envSeries[region] = {
+                    labels: [],
+                    temperature: [],
+                    humidity: [],
+                    precipitation: [],
+                    soilMoisture: [],
+                    windSpeed: []
+                };
+                rawEnvSeries[region].forEach(function (d) {
+                    const t = parseOffsetDateTime(d.timestamp)?.getTime() || 0;
+                    if (t >= startTs && t <= endTs) {
+                        envSeries[region].labels.push(d.timestamp);
+                        envSeries[region].temperature.push(d.temperature != null ? Number(d.temperature) : null);
+                        envSeries[region].humidity.push(d.humidity != null ? Number(d.humidity) : null);
+                        envSeries[region].precipitation.push(d.precipitation != null ? Number(d.precipitation) : null);
+                        envSeries[region].soilMoisture.push(d.soilMoisture != null ? Number(d.soilMoisture) : null);
+                        envSeries[region].windSpeed.push(d.windSpeed != null ? Number(d.windSpeed) : null);
+                    }
+                });
+            });
+        }
+
+        // Remember currently selected region before rebuilding dropdown
+        const previouslySelectedRegion = regionSelect ? regionSelect.value : null;
+
+        // Rebuild the region <select> options from scratch (preserve placeholder)
+        if (regionSelect) {
+            const placeholder = regionSelect.querySelector('option[value=""]');
+            regionSelect.innerHTML = '';
+            if (placeholder) regionSelect.appendChild(placeholder);
+            Object.keys(envSeries).forEach(function (region) {
+                const opt = document.createElement('option');
+                opt.value = region;
+                opt.text = region;
+                regionSelect.appendChild(opt);
+            });
+
+            // Try to restore previously selected region, or select first available
+            if (previouslySelectedRegion && envSeries[previouslySelectedRegion]) {
+                regionSelect.value = previouslySelectedRegion;
+            } else if (Object.keys(envSeries).length > 0) {
+                regionSelect.value = Object.keys(envSeries)[0];
+            }
+        }
+
+        // Update chart for selected region (or pick first if none)
+        const selectedRegion = (regionSelect && regionSelect.value) || Object.keys(envSeries)[0];
+        const selectedMetric = metricSelect ? metricSelect.value : 'temperature';
+
+        console.log('applyTimeFilterAndRender: selectedRegion=', selectedRegion, 'selectedMetric=', selectedMetric);
+        console.log('envSeries keys:', Object.keys(envSeries));
+
+        // Always update the chart after filtering data
+        if (selectedRegion && envSeries[selectedRegion]) {
+            console.log('Updating chart for region:', selectedRegion, 'with', envSeries[selectedRegion].labels.length, 'data points');
+            updateChartFor(selectedRegion, selectedMetric);
+        } else {
+            console.warn('Cannot update chart: selectedRegion=', selectedRegion, 'exists in envSeries?', !!envSeries[selectedRegion]);
+        }
+    }
+
+    document.addEventListener('DOMContentLoaded', function () {
+        createEmptyChart();
+        createProductionPieChart();
+
+        const regionSelect = document.getElementById('regionSelect');
+        const metricSelect = document.getElementById('metricSelect');
+        const autoBtn = document.getElementById('autoSelectLatest');
+        const regionFilter = document.getElementById('regionFilter');
+        const applyRangeBtn = document.getElementById('applyRange');
+        const liveToggle = document.getElementById('liveToggle');
+
+        // Initialize production pie chart
+        const productionMetricSelect = document.getElementById('productionMetricSelect');
+
+        // Add event listener for production metric selector
+        if (productionMetricSelect) {
+            productionMetricSelect.addEventListener('change', updateProductionPieChart);
+        }
+
+        // Initial render of production pie chart
+        if (rawProductionData.length > 0) {
+            updateProductionPieChart();
+        }
+
+        // Initialize UI state based on URL parameters
+        const urlParams = new URLSearchParams(window.location.search);
+        const hasStartParam = urlParams.has('start');
+        const hasEndParam = urlParams.has('end');
+
+        // If we have start/end params, we're in range mode; otherwise live mode
+        if (liveToggle) {
+            liveToggle.checked = !hasStartParam && !hasEndParam;
+        }
+
+        // Populate date inputs from URL params if present
+        if (hasStartParam) {
+            const startDate = new Date(urlParams.get('start'));
+            document.getElementById('startTime').value = startDate.toISOString().slice(0, 16);
+        }
+        if (hasEndParam) {
+            const endDate = new Date(urlParams.get('end'));
+            document.getElementById('endTime').value = endDate.toISOString().slice(0, 16);
+        }
+
+        // Enable controls when we have raw data populated (server inlined or WS)
+        const rawRegions = Object.keys(rawEnvSeries);
+
+        function setControlsEnabled(enabled) {
+            if (regionSelect) regionSelect.disabled = !enabled;
+            if (metricSelect) metricSelect.disabled = !enabled;
+            if (autoBtn) autoBtn.disabled = !enabled;
+            if (regionFilter) regionFilter.disabled = !enabled;
+            if (applyRangeBtn) applyRangeBtn.disabled = !enabled;
+            if (liveToggle) liveToggle.disabled = !enabled;
+        }
+
+        setControlsEnabled(rawRegions.length > 0);
+
+        // filtering for regions (client-side)
+        regionFilter && regionFilter.addEventListener('input', function () {
+            const q = regionFilter.value.toLowerCase();
+            const opts = regionSelect && regionSelect.querySelectorAll('option');
+            opts && opts.forEach(o => {
+                if (!o.value) return; // keep placeholder option
+                o.style.display = o.value.toLowerCase().includes(q) ? '' : 'none';
+            });
+        });
+
+        // when selections change, update chart (extended to production pie chart)
+        regionSelect && regionSelect.addEventListener('change', function () {
+            const region = regionSelect.value;
+            const metric = metricSelect.value;
+            if (region) updateChartFor(region, metric);
+            updateProductionPieChart();
+        });
+
+        metricSelect && metricSelect.addEventListener('change', function () {
+            const region = regionSelect.value;
+            const metric = metricSelect.value;
+            if (region) updateChartFor(region, metric);
+        });
+
+        // auto-select most recent region (choose region with latest timestamp)
+        autoBtn && autoBtn.addEventListener('click', function () {
+            const entries = Object.entries(envSeries);
+            if (entries.length === 0) return;
+            let best = null;
+            let bestTime = 0;
+            entries.forEach(([r, s]) => {
+                if (!s.labels || s.labels.length === 0) return;
+                const last = s.labels[s.labels.length - 1];
+                const t = parseOffsetDateTime(last)?.getTime() || 0;
+                if (t > bestTime) {
+                    bestTime = t;
+                    best = r;
+                }
+            });
+            const selected = best || entries[0][0];
+            if (regionSelect) regionSelect.value = selected;
+            const metric = metricSelect.value;
+            updateChartFor(selected, metric);
+            updateProductionPieChart();
+        });
+
+        // apply range button - reload page with start/end parameters
+        applyRangeBtn && applyRangeBtn.addEventListener('click', function () {
+            const startVal = document.getElementById('startTime').value;
+            const endVal = document.getElementById('endTime').value;
+
+            // Build URL with start/end parameters
+            const params = new URLSearchParams();
+            if (startVal) params.append('start', new Date(startVal).toISOString());
+            if (endVal) params.append('end', new Date(endVal).toISOString());
+
+            // Reload page with new parameters
+            window.location.href = '/dashboard?' + params.toString();
+        });
+
+        // live toggle - reload page to switch modes
+        liveToggle && liveToggle.addEventListener('change', function () {
+            if (liveToggle.checked) {
+                // Switch to live mode - reload page without start/end parameters
+                window.location.href = '/dashboard';
+            } else {
+                // Switch to range mode - reload with current start/end values
+                const startVal = document.getElementById('startTime').value;
+                const endVal = document.getElementById('endTime').value;
+
+                const params = new URLSearchParams();
+                if (startVal) params.append('start', new Date(startVal).toISOString());
+                if (endVal) params.append('end', new Date(endVal).toISOString());
+
+                window.location.href = '/dashboard?' + params.toString();
+            }
+        });
+
+        // If there is at least one raw region, pre-select and render filtered view
+        if (rawRegions.length > 0) {
+            // select first option that is visible (not the placeholder)
+            let pick = null;
+            const opts = regionSelect && regionSelect.querySelectorAll('option');
+            opts && Array.from(opts).forEach(o => {
+                if (o.value && pick === null && o.style.display !== 'none') pick = o.value;
+            });
+            if (!pick && rawRegions.length > 0) pick = rawRegions[0];
+            if (regionSelect && pick) regionSelect.value = pick;
+            const selectedRegion = regionSelect ? regionSelect.value || pick : rawRegions[0];
+            const selectedMetric = metricSelect ? metricSelect.value : 'temperature';
+            updateChartFor(selectedRegion, selectedMetric);
+            updateProductionPieChart();
+        }
+        // Ensure the initial filtered view is applied (uses rawEnvSeries)
+        try {
+            applyTimeFilterAndRender();
+        } catch (e) {
+            console.warn('initial applyTimeFilterAndRender failed', e);
+        }
+    });
+    /*]]>*/
+</script>
+
+</body>
+</html>

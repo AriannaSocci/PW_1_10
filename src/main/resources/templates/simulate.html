@@ -1,0 +1,387 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <title>Data Simulator</title>
+    <style>
+        /* Modern, friendly theme and responsive layout - matching dashboard.html */
+        :root{
+            --bg: #0f1724; /* deep blue */
+            --card: #0b1220;
+            --muted: #9aa4b2;
+            --accent: #4f9cff; /* blue */
+            --accent-2: #7de3a8; /* green accent */
+            --glass: rgba(255,255,255,0.04);
+            --glass-2: rgba(255,255,255,0.02);
+            --danger: #ff6b6b;
+            --text: #e6eefb;
+        }
+        html,body{height:100%;}
+        body { font-family: Inter, system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial; background: linear-gradient(180deg, #071224 0%, #061021 100%); color:var(--text); margin:0; padding:24px; box-sizing:border-box; }
+        a { color: var(--accent); text-decoration:none }
+        header.app-header { display:flex; align-items:center; justify-content:space-between; gap:16px; margin-bottom:18px; }
+        .brand { display:flex; gap:12px; align-items:center }
+        .logo { width:44px; height:44px; border-radius:10px; background:linear-gradient(135deg,var(--accent),#6fb1ff); display:flex; align-items:center; justify-content:center; font-weight:800; color:#042533 }
+        h1 { font-size:1.35rem; margin:0; }
+        .subtitle { color:var(--muted); font-size:0.95rem; margin-top:2px }
+
+        /* Center the form in a card */
+        .page-container { max-width: 800px; margin: 0 auto; }
+        .panel { background: linear-gradient(180deg,var(--card), rgba(11,18,32,0.9)); padding:24px; border-radius:12px; box-shadow:0 6px 18px rgba(0,0,0,0.6); border:1px solid rgba(255,255,255,0.03); }
+
+        .form-grid { display: grid; gap: 20px; }
+        .form-group { display: flex; flex-direction: column; gap: 8px; }
+        label { font-size:0.9rem; color:var(--text); font-weight: 600; }
+        label.small { font-size:0.85rem; color:var(--muted); font-weight: 400; }
+
+        input[type="datetime-local"],
+        input[type="number"],
+        select {
+            padding:12px 14px;
+            border-radius:8px;
+            border:1px solid rgba(255,255,255,0.06);
+            background:var(--glass);
+            color:var(--text);
+            font-size: 0.95rem;
+            transition: border-color 0.2s ease, background 0.2s ease;
+        }
+
+        input[type="datetime-local"]:focus,
+        input[type="number"]:focus,
+        select:focus {
+            outline: none;
+            border-color: var(--accent);
+            background: rgba(255,255,255,0.06);
+        }
+
+        /* Calendar icon color */
+        input[type="datetime-local"]::-webkit-calendar-picker-indicator {
+            filter: invert(1);
+            cursor: pointer;
+        }
+
+        .interval-group {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+        }
+
+        button {
+            padding:14px 20px;
+            border-radius:8px;
+            border:none;
+            background: linear-gradient(135deg, var(--accent), #5fa8ff);
+            color:#fff;
+            font-weight:700;
+            font-size: 1rem;
+            cursor: pointer;
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+            margin-top: 8px;
+        }
+
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(79, 156, 255, 0.3);
+        }
+
+        button:active {
+            transform: translateY(0);
+        }
+
+        button.secondary {
+            background: transparent;
+            border: 1px solid rgba(255,255,255,0.06);
+            color: var(--text);
+        }
+
+        button.secondary:hover {
+            background: rgba(255,255,255,0.04);
+            box-shadow: none;
+        }
+
+        .help-text {
+            color: var(--muted);
+            font-size: 0.85rem;
+            margin-top: 4px;
+            font-style: italic;
+        }
+
+        .info-box {
+            background: rgba(79, 156, 255, 0.08);
+            border: 1px solid rgba(79, 156, 255, 0.2);
+            border-radius: 8px;
+            padding: 16px;
+            margin-bottom: 20px;
+        }
+
+        .info-box h3 {
+            margin: 0 0 8px 0;
+            color: var(--accent);
+            font-size: 1rem;
+        }
+
+        .info-box p {
+            margin: 0;
+            color: var(--muted);
+            font-size: 0.9rem;
+            line-height: 1.5;
+        }
+
+        .button-group {
+            display: flex;
+            gap: 12px;
+            margin-top: 20px;
+        }
+
+        .button-group button {
+            flex: 1;
+        }
+
+        footer.app-footer {
+            margin-top:24px;
+            color:var(--muted);
+            font-size:0.9rem;
+            display:flex;
+            justify-content:space-between;
+            max-width: 800px;
+            margin-left: auto;
+            margin-right: auto;
+        }
+
+        h2 {
+            margin: 0 0 20px 0;
+            font-size: 1.5rem;
+        }
+
+        /* Radio button styling */
+        .radio-group {
+            display: flex;
+            gap: 16px;
+            flex-wrap: wrap;
+        }
+
+        .radio-option {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            cursor: pointer;
+        }
+
+        .radio-option input[type="radio"] {
+            width: 18px;
+            height: 18px;
+            cursor: pointer;
+            accent-color: var(--accent);
+        }
+
+        .radio-option label {
+            cursor: pointer;
+            margin: 0;
+        }
+    </style>
+</head>
+<body>
+<header class="app-header">
+    <div class="brand">
+        <div class="logo">DS</div>
+        <div>
+            <h1>Data Simulator</h1>
+            <div class="subtitle">Generate environmental & production data</div>
+        </div>
+    </div>
+    <div>
+        <nav aria-label="top-actions">
+            <a th:href="@{/dashboard}">Dashboard</a>
+        </nav>
+    </div>
+</header>
+
+<main class="page-container">
+    <div class="panel">
+        <h2>Simulate Data Generation</h2>
+
+        <div class="info-box">
+            <h3>ℹ️ How it works</h3>
+            <p>
+                This tool simulates environmental and production data for agricultural monitoring.
+                Select the type of data, specify the time range, and set the interval between data points.
+                The system will generate realistic, seasonally-appropriate data for all regions and crops.
+            </p>
+        </div>
+
+        <form th:action="@{/simulate-data}" method="post">
+            <div class="form-grid">
+
+                <!-- Data Type Selection -->
+                <div class="form-group">
+                    <label>Data Type</label>
+                    <div class="radio-group">
+                        <div class="radio-option">
+                            <input type="radio" id="envType" name="dataType" value="environmental" />
+                            <label for="envType">Environmental Data</label>
+                        </div>
+                        <div class="radio-option">
+                            <input type="radio" id="prodType" name="dataType" value="production" />
+                            <label for="prodType">Production Data</label>
+                        </div>
+                        <div class="radio-option">
+                            <input type="radio" id="bothType" name="dataType" value="both" checked />
+                            <label for="bothType">Both</label>
+                        </div>
+                    </div>
+                    <div class="help-text">Select which type of data to generate</div>
+                </div>
+
+                <!-- Time Range -->
+                <div class="form-group">
+                    <label for="start">Start Time</label>
+                    <input type="datetime-local" id="start" name="start" required />
+                    <div class="help-text">The earliest timestamp for generated data</div>
+                </div>
+
+                <div class="form-group">
+                    <label for="end">End Time</label>
+                    <input type="datetime-local" id="end" name="end" required />
+                    <div class="help-text">The latest timestamp for generated data</div>
+                </div>
+
+                <!-- Interval Configuration -->
+                <div class="form-group">
+                    <label>Data Generation Interval</label>
+                    <div class="interval-group">
+                        <div>
+                            <label class="small" for="intervalValue">Value</label>
+                            <input type="number" id="intervalValue" name="intervalValue" min="1" value="1" required />
+                        </div>
+                        <div>
+                            <label class="small" for="intervalUnit">Unit</label>
+                            <select id="intervalUnit" name="intervalUnit" required>
+                                <option value="MINUTES">Minutes</option>
+                                <option value="HOURS">Hours</option>
+                                <option value="DAYS">Days</option>
+                                <option value="WEEKS">Weeks</option>
+                                <option value="MONTHS">Months</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="help-text">How far back to go between each generated record</div>
+                </div>
+
+                <!-- Action Buttons -->
+                <div class="button-group">
+                    <button type="button" class="secondary" onclick="setQuickPreset()">Quick Preset (Full Year)</button>
+                    <button type="submit">Generate Data</button>
+                </div>
+
+            </div>
+        </form>
+    </div>
+</main>
+
+<footer class="app-footer">
+    <div>© 2025 Data Generator</div>
+</footer>
+
+<script>
+    // Set default values to current time and 24 hours ago
+    document.addEventListener('DOMContentLoaded', function() {
+        const now = new Date();
+        const startTime = new Date(now.getTime() - 24 * 60 * 60 * 1000); // 24 hours ago
+
+        // Format for datetime-local input (YYYY-MM-DDTHH:mm)
+        function formatDateTimeLocal(date) {
+            const year = date.getFullYear();
+            const month = String(date.getMonth() + 1).padStart(2, '0');
+            const day = String(date.getDate()).padStart(2, '0');
+            const hours = String(date.getHours()).padStart(2, '0');
+            const minutes = String(date.getMinutes()).padStart(2, '0');
+            return `${year}-${month}-${day}T${hours}:${minutes}`;
+        }
+
+        document.getElementById('start').value = formatDateTimeLocal(startTime);
+        document.getElementById('end').value = formatDateTimeLocal(now);
+    });
+
+    // Quick preset function - generates full year data
+    function setQuickPreset() {
+        const currentYear = new Date().getFullYear();
+        const startTime = new Date(currentYear, 0, 1, 0, 0, 0); // January 1st, 00:00
+        const endTime = new Date(currentYear, 11, 31, 23, 59, 59); // December 31st, 23:59
+
+        function formatDateTimeLocal(date) {
+            const year = date.getFullYear();
+            const month = String(date.getMonth() + 1).padStart(2, '0');
+            const day = String(date.getDate()).padStart(2, '0');
+            const hours = String(date.getHours()).padStart(2, '0');
+            const minutes = String(date.getMinutes()).padStart(2, '0');
+            return `${year}-${month}-${day}T${hours}:${minutes}`;
+        }
+
+        document.getElementById('start').value = formatDateTimeLocal(startTime);
+        document.getElementById('end').value = formatDateTimeLocal(endTime);
+        document.getElementById('intervalValue').value = '6';
+        document.getElementById('intervalUnit').value = 'HOURS';
+        document.getElementById('bothType').checked = true;
+    }
+
+    // Form validation and conversion
+    document.querySelector('form').addEventListener('submit', function(e) {
+        e.preventDefault(); // Prevent default to handle conversion
+
+        const startInput = document.getElementById('start');
+        const endInput = document.getElementById('end');
+
+        const start = new Date(startInput.value);
+        const end = new Date(endInput.value);
+
+        if (start >= end) {
+            alert('Start time must be before end time!');
+            return false;
+        }
+
+        const intervalValue = parseInt(document.getElementById('intervalValue').value);
+        if (intervalValue < 1) {
+            alert('Interval value must be at least 1!');
+            return false;
+        }
+
+        // Convert datetime-local values to OffsetDateTime format (ISO 8601)
+        // Add hidden inputs with the converted values
+        const form = e.target;
+
+        // Remove any existing hidden fields
+        const existingHidden = form.querySelectorAll('input[type="hidden"][name="start"], input[type="hidden"][name="end"]');
+        existingHidden.forEach(el => el.remove());
+
+        // Create hidden inputs with ISO format
+        const startHidden = document.createElement('input');
+        startHidden.type = 'hidden';
+        startHidden.name = 'start';
+        startHidden.value = start.toISOString();
+
+        const endHidden = document.createElement('input');
+        endHidden.type = 'hidden';
+        endHidden.name = 'end';
+        endHidden.value = end.toISOString();
+
+        form.appendChild(startHidden);
+        form.appendChild(endHidden);
+
+        // Disable the original datetime-local inputs so they don't get submitted
+        startInput.disabled = true;
+        endInput.disabled = true;
+
+        // Show a loading indicator
+        const submitBtn = form.querySelector('button[type="submit"]');
+        if (submitBtn) {
+            submitBtn.textContent = 'Generating...';
+            submitBtn.disabled = true;
+        }
+
+        // Submit the form
+        form.submit();
+    });
+</script>
+
+</body>
+</html>
