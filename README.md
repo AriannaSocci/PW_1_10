@@ -202,8 +202,8 @@ Before you begin, ensure you have the following installed:
 ### 1. Clone the Repository
 
 ```bash
-git clone https://github.com/yourusername/data_generator.git
-cd data_generator
+git clone https://github.com/AriannaSocci/PW_1_10.git
+cd PW_1_10
 ```
 
 ### 2. Build the Project
@@ -229,7 +229,7 @@ mvn spring-boot:run
 #### Option B: Using the JAR
 
 ```bash
-java -jar target/data_generator-1.0.0.jar
+java -jar target/PW_1_10-1.0.0.jar
 ```
 
 #### Option C: Using IDE
@@ -255,11 +255,11 @@ Configuration is managed in `src/main/resources/application.yml`:
 ```yaml
 spring:
   application:
-    name: data_generator
+    name: PW_1_10
 
   # Database Configuration
   datasource:
-    url: jdbc:h2:mem:data_generator_db
+    url: jdbc:h2:mem:PW_1_10_db
     driver-class-name: org.h2.Driver
     username: sa
     password: password
@@ -297,7 +297,7 @@ Replace H2 in-memory with file-based:
 ```yaml
 spring:
   datasource:
-    url: jdbc:h2:file:./data/data_generator_db
+    url: jdbc:h2:file:./data/PW_1_10_db
     # Data will be persisted in ./data/ directory
 ```
 
@@ -436,7 +436,7 @@ client.connect({}, function() {
 | Endpoint | Credentials |
 |----------|-------------|
 | URL | http://localhost:8080/h2-console |
-| JDBC URL | `jdbc:h2:mem:data_generator_db` |
+| JDBC URL | `jdbc:h2:mem:PW_1_10_db` |
 | Username | `sa` |
 | Password | `password` |
 
@@ -753,10 +753,10 @@ efficiency = (revenue / productionCost) * 100
 ### Project Structure
 
 ```
-data_generator/
+PW_1_10/
 ├── src/
 │   ├── main/
-│   │   ├── java/org/ancora_casini/data_generator/
+│   │   ├── java/org/ancora_casini/PW_1_10/
 │   │   │   ├── DataGeneratorApplication.java
 │   │   │   ├── config/
 │   │   │   ├── controller/
@@ -774,7 +774,7 @@ data_generator/
 │   │           ├── dashboard.html
 │   │           └── simulate.html
 │   └── test/
-│       └── java/org/ancora_casini/data_generator/
+│       └── java/org/ancora_casini/PW_1_10/
 ├── target/                    # Build output
 ├── pom.xml                    # Maven configuration
 └── README.md                  # This file
