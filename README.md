@@ -7,7 +7,7 @@ A comprehensive Spring Boot application for simulating, storing, and visualizing
 
 ---
 
-## 📋 Table of Contents
+## Table of Contents
 
 - [Features](#features)
 - [Architecture](#architecture)
@@ -67,32 +67,32 @@ A comprehensive Spring Boot application for simulating, storing, and visualizing
 
 ```
 ┌─────────────────────────────────────────────────────────────┐
-│                    Spring Boot Application                    │
+│                    Spring Boot Application                  │
 ├─────────────────────────────────────────────────────────────┤
-│                                                               │
-│  ┌──────────────┐  ┌──────────────┐  ┌──────────────┐      │
-│  │  Controller  │  │   Service    │  │  Repository  │      │
-│  │    Layer     │──│    Layer     │──│    Layer     │      │
-│  └──────────────┘  └──────────────┘  └──────────────┘      │
-│         │                  │                  │              │
-│         │                  │                  ▼              │
+│                                                             │
+│  ┌──────────────┐  ┌──────────────┐  ┌──────────────┐       │
+│  │  Controller  │  │   Service    │  │  Repository  │       │
+│  │    Layer     │──│    Layer     │──│    Layer     │       │
+│  └──────────────┘  └──────────────┘  └──────────────┘       │
+│         │                  │                  │             │
+│         │                  │                  ▼             │
 │         │                  │          ┌──────────────┐      │
 │         │                  │          │  H2 Database │      │
 │         │                  │          │   (In-Memory)│      │
 │         │                  └──────────┴──────────────┘      │
-│         │                  │                                 │
-│         │                  ▼                                 │
+│         │                  │                                │
+│         │                  ▼                                │
 │         │          ┌──────────────┐                         │
 │         │          │  WebSocket   │                         │
 │         │          │   Scheduler  │                         │
 │         │          └──────────────┘                         │
-│         │                  │                                 │
-│         ▼                  ▼                                 │
+│         │                  │                                │
+│         ▼                  ▼                                │
 │  ┌────────────────────────────────┐                         │
 │  │     Thymeleaf Templates        │                         │
 │  │  (Dashboard + Simulate Pages)  │                         │
 │  └────────────────────────────────┘                         │
-│                                                               │
+│                                                             │
 └─────────────────────────────────────────────────────────────┘
                          │
                          ▼
@@ -881,18 +881,12 @@ mvn verify
 - [Chart.js](https://www.chartjs.org/docs/latest/)
 - [STOMP Protocol](https://stomp.github.io/)
 
-### Related Files
-
-- `SOIL_MOISTURE_FIX_SUMMARY.md` - Details on soil moisture algorithm improvements
-- `PIE_CHART_IMPLEMENTATION_SUMMARY.md` - Production pie chart feature documentation
-- `DEFAULT_PAGE_CHANGES_SUMMARY.md` - Navigation and routing changes
-
 ### Project History
 
 **Version 1.0.0**
 - Initial release with environmental and production data simulation
 - Real-time dashboard with WebSocket updates
-- 8 Italian regions, 9 crop types
+- 8 Italian regions, 5 crop types
 - Realistic seasonal and regional climate modeling
 - Interactive time range filtering
 - Production analytics with pie chart visualization
